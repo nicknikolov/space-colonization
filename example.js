@@ -23,7 +23,7 @@ const iterate = require('./index')({
   splitChance: 0.4,
   viewAngle: 30,
   branchAngle: 30,
-  viewDistance: 0.5,
+  viewDistance: 0.5
 })
 
 const camera = require('regl-camera')(regl, {
@@ -87,7 +87,6 @@ regl.frame(() => {
   })
 
   camera(() => {
-    // let iterObject = sc.iterate()
     let iterObject = iterate()
     let hormones = iterObject.hormones
     let buds = iterObject.buds
@@ -107,9 +106,7 @@ regl.frame(() => {
     for (let i = 0; i < buds.length; i++) {
       var bud = buds[i]
       if (bud.parentPos) {
-        // const parentPos = bud.parentPos.slice(0, 3)
-        // const pos = bud.position.slice(0, 3)
-        // drawLine({ pos: [bud.parentPos, bud.position] })
+        drawLine({ pos: [bud.parentPos, bud.position] })
       }
 
       if (bud.state === 0) {
