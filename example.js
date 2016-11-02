@@ -1,12 +1,42 @@
-const regl = require('regl')({ pixelRatio: 1})
+const regl = require('regl')({
+  pixelRatio: 1,
+  extensions: ['EXT_shader_texture_lod', 'angle_instanced_arrays']
+})
 const mat4 = require('pex-math/Mat4')
 const vec3 = require('pex-math/Vec3')
 const rnd = require('pex-random')
 const sphere = require('primitive-sphere')()
+const GUI = require('./local_modules/pex-gui')
+const sc = require('./index')
+
+// algorithm params
+let State = {}
+State.deadZone = 0.1
+State.growthStep = 0.03
+State.splitChance = 0.4
+State.viewAngle = 30
+State.branchAngle = 30
+State.viewDistance = 0.5
+State.growthDirection = [0, 1, 0]
+State.growthBias = 0.5
+
+const gui = new GUI(regl, window.innerWidth, window.innerHeight)
+window.addEventListener('mousedown', (e) => {
+  gui.onMouseDown(e)
+})
+gui.addHeader('params')
+gui.addParam('growthStep', State, 'growthStep', { min: 0.01, max: 0.1})
+gui.addHeader('other')
+gui.addSeparator()
+gui.addButton('restart', () => {
+  console.log('restart')
+  iterate = sc({ buds: [[0, -1, 0]], hormones: hormones})
+})
 
 // generate hormones
+let hormonesNum = 200
 let hormones = []
-for (let i = 0; i < 200; i++) {
+for (let i = 0; i < hormonesNum; i++) {
   var pos = vec3.add(rnd.vec3(1), [0, 0, 0])
   if (vec3.length(vec3.sub(pos, [0, 0, 0])) > 5) {
     i--
@@ -15,16 +45,7 @@ for (let i = 0; i < 200; i++) {
   hormones.push(pos)
 }
 
-const iterate = require('./index')({
-  buds: [[0, -1, 0]],
-  hormones: hormones,
-  deadZone: 0.1,
-  growthStep: 0.03,
-  splitChance: 0.4,
-  viewAngle: 30,
-  branchAngle: 30,
-  viewDistance: 0.5
-})
+let iterate = sc({ buds: [[0, -1, 0]], hormones: hormones})
 
 const camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
@@ -35,10 +56,14 @@ const camera = require('regl-camera')(regl, {
 const drawSphere = regl({
   vert: `
   precision mediump float;
-  attribute vec3 position;
+  // attribute vec3 position;
+  attribute vec3 position, offset, scale;
   uniform mat4 projection, view, model;
   void main() {
-    gl_Position = projection * view * model * vec4(position, 1);
+    vec4 pos = vec4(position, 1);
+    pos.xyz *= scale;
+    pos.xyz += offset;
+    gl_Position = projection * view * model * pos;
   }`,
   frag: `
   precision mediump float;
@@ -47,9 +72,18 @@ const drawSphere = regl({
     gl_FragColor = vec4(color, 1.0);
   }`,
   attributes: {
-    position: sphere.positions
+    position: sphere.positions,
+    offset: {
+      buffer: regl.prop('offset'),
+      divisor: 1
+    },
+    scale: {
+      buffer: regl.prop('scale'),
+      divisor: 1
+    }
   },
   elements: sphere.cells,
+  instances: regl.prop('instances'),
   uniforms: {
     color: regl.prop('color'),
     model: regl.prop('model')
@@ -87,9 +121,21 @@ regl.frame(() => {
   })
 
   camera(() => {
-    let iterObject = iterate()
+    let iterObject = iterate({
+      deadZone: 0.1,
+      growthStep: State.growthStep,
+      splitChance: 0.4,
+      viewAngle: 30,
+      branchAngle: 30,
+      viewDistance: 0.5,
+      growthDirection: [0, 1, 0],
+      growthBias: 0.5
+    })
     let hormones = iterObject.hormones
     let buds = iterObject.buds
+
+    const budOffsets = []
+    const budScales = []
 
     let minArea = 0.0005
     for (let i = 0; i < buds.length; i++) {
@@ -113,9 +159,9 @@ regl.frame(() => {
       var hormone = hormones[i]
       if (hormone.state === 0) {
         // alive hormone
-        let model = mat4.createFromTranslation(hormone.position)
-        mat4.scale(model, [0.05, 0.05, 0.05])
-        drawSphere({ color: [0, 0, 1], view: mat4.create(), model: model })
+        // let model = mat4.createFromTranslation(hormone.position)
+        // mat4.scale(model, [0.05, 0.05, 0.05])
+        // drawSphere({ color: [0, 0, 1], view: mat4.create(), model: model })
       } else if (hormone.state === 1) {
         // dead hormone
       }
@@ -129,19 +175,31 @@ regl.frame(() => {
 
       if (bud.state === 0) {
         // alive
-        let model = mat4.createFromTranslation(bud.position)
-        mat4.scale(model, [0.05, 0.05, 0.05])
-        drawSphere({ color: [0, 1, 0], view: mat4.create(), model: model })
+        // let model = mat4.createFromTranslation(bud.position)
+        // mat4.scale(model, [0.05, 0.05, 0.05])
+        // drawSphere({ color: [0, 1, 0], view: mat4.create(), model: model })
       }
 
       if (bud.state === 1) {
         // dead
-        let model = mat4.createFromTranslation(bud.position)
         let radius = Math.sqrt(bud.area) / 10
-        mat4.scale(model, [radius, radius, radius])
-        drawSphere({ color: [0.4, 0.4, 0.4], view: mat4.create(), model: model })
+        budOffsets.push(bud.position)
+        budScales.push([radius, radius, radius])
       }
     }
+
+    let offsetsBuff = regl.buffer(budOffsets)
+    let scalesBuff = regl.buffer(budScales)
+    drawSphere({
+      color: [0.4, 0.4, 0.4],
+      view: mat4.create(),
+      model: mat4.create(),
+      instances: budOffsets.length,
+      offset: offsetsBuff,
+      scale: scalesBuff
+    })
+
+    gui.draw()
   })
 })
 
