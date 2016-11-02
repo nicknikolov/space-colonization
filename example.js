@@ -1,4 +1,4 @@
-const regl = require('regl')()
+const regl = require('regl')({ pixelRatio: 1})
 const mat4 = require('pex-math/Mat4')
 const vec3 = require('pex-math/Vec3')
 const rnd = require('pex-random')
