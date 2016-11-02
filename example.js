@@ -91,6 +91,24 @@ regl.frame(() => {
     let hormones = iterObject.hormones
     let buds = iterObject.buds
 
+    let minArea = 0.0005
+    for (let i = 0; i < buds.length; i++) {
+      buds[i].area = minArea
+    }
+
+    buds.forEach((bud) => {
+      if (bud.parent) bud.parent.hasChildren = true
+    })
+
+    buds.forEach(function(bud) {
+      var parent = bud.parent
+      if (bud.hasChildren) return
+      while (parent) {
+        parent.area = (parent.area || 0) + minArea
+        parent = parent.parent
+      }
+    })
+
     for (let i = 0; i < hormones.length; i++) {
       var hormone = hormones[i]
       if (hormone.state === 0) {
@@ -99,14 +117,14 @@ regl.frame(() => {
         mat4.scale(model, [0.05, 0.05, 0.05])
         drawSphere({ color: [0, 0, 1], view: mat4.create(), model: model })
       } else if (hormone.state === 1) {
-        // deade hormone
+        // dead hormone
       }
     };
 
     for (let i = 0; i < buds.length; i++) {
       var bud = buds[i]
-      if (bud.parentPos) {
-        drawLine({ pos: [bud.parentPos, bud.position] })
+      if (bud.parent) {
+        // drawLine({ pos: [bud.parent.position, bud.position] })
       }
 
       if (bud.state === 0) {
@@ -119,7 +137,8 @@ regl.frame(() => {
       if (bud.state === 1) {
         // dead
         let model = mat4.createFromTranslation(bud.position)
-        mat4.scale(model, [0.01, 0.01, 0.01])
+        let radius = Math.sqrt(bud.area) / 10
+        mat4.scale(model, [radius, radius, radius])
         drawSphere({ color: [0.4, 0.4, 0.4], view: mat4.create(), model: model })
       }
     }
