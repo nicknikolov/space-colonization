@@ -125,7 +125,7 @@ module.exports = function (opts) {
         buds.push({
           state: 0,
           position: nextPos,
-          parentPos: budPos,
+          parent: bud,
           split: true
         })
         didSplit = true
@@ -151,7 +151,7 @@ module.exports = function (opts) {
       buds.push({
         state: 0,
         position: nextPos,
-        parentPos: bud.position
+        parent: bud
       })
 
       bud.hormones = attractors[i].map(function (index) { return hormones[index] })
