@@ -20,6 +20,8 @@ module.exports = function (opts) {
   let growType = opts.growType || 'split'
   let branchAngle = opts.branchAngle || 30
   let viewDistance = opts.viewDistance || 0.3
+  let growthDirection = opts.growthDirection || [0, 1, 0]
+  let growthBias = opts.growthBias || 0
 
   let buds = budPosArray.map((budPos) => { return { state: 0, position: budPos, parentPos: null } })
   let hormones = hormPosArray.map((hormonePos) => { return { state: 0, position: hormonePos } })
@@ -133,9 +135,10 @@ module.exports = function (opts) {
 
       // find next position for bud
       let dir = vec3.sub(vec3.copy(avgVec), budPos)
-      // average with original direction
-      // vec3.add(dir, bud.position.direction)
-      // vec3.scale(dir, 1 / 2)
+
+      // global bias
+      vec3.lerp(vec3.normalize(dir), vec3.normalize(growthDirection), growthBias)
+
       vec3.scale(vec3.normalize(dir), growthStep)
       if (didSplit && growType === 'split') {
         // if it split and grow type is 'split' we need to rotate
