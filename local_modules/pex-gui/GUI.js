@@ -4,58 +4,58 @@ var Renderer = isPlask ? require('./SkiaRenderer') : require('./HTMLCanvasRender
 var Rect = require('pex-geom/Rect')
 var KeyboardEvent = require('pex-sys/KeyboardEvent')
 
-var VERT = '\
-attribute vec2 aPosition; \
-attribute vec2 aTexCoord0; \
-uniform vec2 uWindowSize; \
-uniform vec4 uRect; \
-varying vec2 vTexCoord0; \
-void main() { \
-vTexCoord0 = aTexCoord0; \
-vec2 pos = aPosition.xy * 0.5 + 0.5; \
-pos.x = uRect.x + pos.x * (uRect.z - uRect.x); \
-pos.y = uRect.y + pos.y * (uRect.w - uRect.y); \
-pos.x /= uWindowSize.x; \
-pos.y /= uWindowSize.y; \
-pos = (pos - 0.5) * 2.0; \
-gl_Position = vec4(pos, 0.0, 1.0); \
-}'
+var VERT = `
+attribute vec2 aPosition;
+attribute vec2 aTexCoord0;
+uniform vec2 uWindowSize;
+uniform vec4 uRect;
+varying vec2 vTexCoord0;
+void main() {
+  vTexCoord0 = aTexCoord0;
+  vec2 pos = aPosition.xy * 0.5 + 0.5;
+  pos.x = uRect.x + pos.x * (uRect.z - uRect.x);
+  pos.y = uRect.y + pos.y * (uRect.w - uRect.y);
+  pos.x /= uWindowSize.x;
+  pos.y /= uWindowSize.y;
+  pos = (pos - 0.5) * 2.0;
+  gl_Position = vec4(pos, 0.0, 1.0);
+}`
 
 var TEXTURE_2D_FRAG = `
 uniform sampler2D uTexture;
 uniform float uHDR;
 varying vec2 vTexCoord0;
 void main() {
-gl_FragColor = texture2D(uTexture, vec2(vTexCoord0.x, vTexCoord0.y));
-if (uHDR == 1.0) {
-gl_FragColor.rgb = gl_FragColor.rgb / (gl_FragColor.rgb + 1.0);
-gl_FragColor.rgb = pow(gl_FragColor.rgb, vec3(1.0/2.2));
-}
+  gl_FragColor = texture2D(uTexture, vec2(vTexCoord0.x, vTexCoord0.y));
+  if (uHDR == 1.0) {
+    gl_FragColor.rgb = gl_FragColor.rgb / (gl_FragColor.rgb + 1.0);
+    gl_FragColor.rgb = pow(gl_FragColor.rgb, vec3(1.0/2.2));
+  }
 }`
 
 // we want normal (not fliped) cubemaps maps to be represented same way as
 // latlong panoramas so we flip by -1.0 by default
 // render target dynamic cubemaps should be not flipped
-var TEXTURE_CUBE_FRAG = '\
-const float PI = 3.1415926; \
-varying vec2 vTexCoord0; \
-uniform samplerCube uTexture; \
-uniform float uHDR; \
-uniform float uFlipEnvMap; \
-uniform float uLevel; \
-void main() { \
-float theta = vTexCoord0.x * 2.0 * PI - PI/2.0; \
-float phi = vTexCoord0.y * PI; \
-float x = cos(theta) * sin(phi); \
-float y = -cos(phi); \
-float z = sin(theta) * sin(phi); \
-vec3 N = normalize(vec3(uFlipEnvMap * x, y, z)); \
-gl_FragColor = textureCube(uTexture, N, uLevel); \
-if (uHDR == 1.0) { \
-gl_FragColor.rgb = gl_FragColor.rgb / (gl_FragColor.rgb + 1.0); \
-gl_FragColor.rgb = pow(gl_FragColor.rgb, vec3(1.0/2.2)); \
-}\
-}'
+var TEXTURE_CUBE_FRAG = `
+const float PI = 3.1415926;
+varying vec2 vTexCoord0;
+uniform samplerCube uTexture;
+uniform float uHDR;
+uniform float uFlipEnvMap;
+uniform float uLevel;
+void main() {
+float theta = vTexCoord0.x * 2.0 * PI - PI/2.0;
+  float phi = vTexCoord0.y * PI;
+  float x = cos(theta) * sin(phi);
+  float y = -cos(phi);
+  float z = sin(theta) * sin(phi);
+  vec3 N = normalize(vec3(uFlipEnvMap * x, y, z));
+  gl_FragColor = textureCube(uTexture, N, uLevel);
+  if (uHDR == 1.0) {
+    gl_FragColor.rgb = gl_FragColor.rgb / (gl_FragColor.rgb + 1.0);
+    gl_FragColor.rgb = pow(gl_FragColor.rgb, vec3(1.0/2.2));
+  }
+}`
 
 if (!isPlask) {
   TEXTURE_2D_FRAG = 'precision highp float;\n\n' + TEXTURE_2D_FRAG
@@ -90,7 +90,7 @@ function GUI (regl, windowWidth, windowHeight, pixelRatio) {
   this.scale = 1
 
   var rectPositions = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
-  var rectTexCoords = [[0, 0], [1, 0], [1, 1], [ 0, 1]]
+  var rectTexCoords = [[0, 0], [1, 0], [1, 1], [0, 1]]
   var rectIndices = [[0, 1, 2], [0, 2, 3]]
 
   /*
@@ -378,7 +378,7 @@ GUI.prototype.onMouseUp = function (e) {
  * @return {[type]}   [description]
  */
 GUI.prototype.onKeyDown = function (e) {
-  var focusedItem = this.items.filter(function (item) { return item.type === 'text' && item.focus})[0]
+  var focusedItem = this.items.filter(function (item) { return item.type === 'text' && item.focus })[0]
   if (!focusedItem) {
     return
   }
@@ -386,14 +386,13 @@ GUI.prototype.onKeyDown = function (e) {
   switch (e.keyCode) {
     case KeyboardEvent.VK_BACKSPACE:
       var str = focusedItem.contextObject[focusedItem.attributeName]
-    focusedItem.contextObject[focusedItem.attributeName] = str.substr(0, Math.max(0, str.length - 1))
-    focusedItem.dirty = true
-    if (focusedItem.onchange) {
-      focusedItem.onchange(focusedItem.contextObject[focusedItem.attributeName])
-    }
-    e.stopPropagation()
-    break
-
+      focusedItem.contextObject[focusedItem.attributeName] = str.substr(0, Math.max(0, str.length - 1))
+      focusedItem.dirty = true
+      if (focusedItem.onchange) {
+        focusedItem.onchange(focusedItem.contextObject[focusedItem.attributeName])
+      }
+      e.stopPropagation()
+      break
   }
 }
 
@@ -403,7 +402,7 @@ GUI.prototype.onKeyDown = function (e) {
  * @return {[type]}   [description]
  */
 GUI.prototype.onKeyPress = function (e) {
-  var focusedItem = this.items.filter(function (item) { return item.type === 'text' && item.focus})[0]
+  var focusedItem = this.items.filter(function (item) { return item.type === 'text' && item.focus })[0]
   if (!focusedItem) {
     return
   }
