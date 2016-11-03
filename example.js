@@ -114,6 +114,10 @@ const drawLine = regl({
   count: 2
 })
 
+let offsetsBuff = regl.buffer([[0, 0, 0]])
+let scalesBuff = regl.buffer([[0, 0, 0]])
+let prevAlive = 0
+
 regl.frame(() => {
   regl.clear({
     color: [1, 1, 1, 1],
@@ -167,6 +171,8 @@ regl.frame(() => {
       }
     };
 
+    let alive = 0
+
     for (let i = 0; i < buds.length; i++) {
       var bud = buds[i]
       if (bud.parent) {
@@ -174,6 +180,8 @@ regl.frame(() => {
       }
 
       if (bud.state === 0) {
+        alive++
+
         // alive
         // let model = mat4.createFromTranslation(bud.position)
         // mat4.scale(model, [0.05, 0.05, 0.05])
@@ -188,8 +196,14 @@ regl.frame(() => {
       }
     }
 
-    let offsetsBuff = regl.buffer(budOffsets)
-    let scalesBuff = regl.buffer(budScales)
+    // let offsetsBuff = regl.buffer(budOffsets)
+    // let scalesBuff = regl.buffer(budScales)
+    if (alive > 0 || alive != prevAlive) {
+      prevAlive = alive;
+      offsetsBuff(budOffsets)
+      scalesBuff(budScales)
+    }
+
     drawSphere({
       color: [0.4, 0.4, 0.4],
       view: mat4.create(),
