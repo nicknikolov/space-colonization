@@ -211,7 +211,7 @@ regl.frame(() => {
         budScales.push([radius, radius, radius])
 
         if (bud.parent) jsonData.push([bud.position, buds.indexOf(bud.parent)])
-        else jsonData.push([[bud.position], -1])
+        else jsonData.push([bud.position, -1])
       }
     }
 
