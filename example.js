@@ -114,8 +114,15 @@ const drawLine = regl({
   count: 2
 })
 
-let offsetsBuff = regl.buffer([[0, 0, 0]])
-let scalesBuff = regl.buffer([[0, 0, 0]])
+let offsetsBuff = regl.buffer({
+  type: 'float',
+  usage: 'dynamic'
+})
+let scalesBuff = regl.buffer({
+  type: 'float',
+  usage: 'dynamic'
+})
+
 let prevAlive = 0
 
 regl.frame(() => {
