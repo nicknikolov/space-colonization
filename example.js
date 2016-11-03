@@ -25,12 +25,16 @@ window.addEventListener('mousedown', (e) => {
   gui.onMouseDown(e)
 })
 gui.addHeader('params')
-gui.addParam('growthStep', State, 'growthStep', { min: 0.01, max: 0.1})
-gui.addHeader('other')
+gui.addParam('growth step', State, 'growthStep', { min: 0.01, max: 0.1 })
+gui.addParam('split chance', State, 'splitChance', { min: 0, max: 1 })
+gui.addParam('view angle', State, 'viewAngle', { min: 0, max: 180 })
+gui.addParam('branch angle', State, 'branchAngle', { min: 0, max: 180 })
+gui.addParam('view distance', State, 'viewDistance', { min: 0, max: 1 })
+gui.addParam('growth dir', State, 'growthDirection', { min: -1, max: 1})
+gui.addParam('growth bias', State, 'growthBias', { min: 0, max: 1})
 gui.addSeparator()
 gui.addButton('restart', () => {
-  console.log('restart')
-  iterate = sc({ buds: [[0, -1, 0]], hormones: hormones})
+  iterate = sc({ buds: [[0, -1, 0]], hormones: hormones })
 })
 
 // generate hormones
@@ -45,7 +49,7 @@ for (let i = 0; i < hormonesNum; i++) {
   hormones.push(pos)
 }
 
-let iterate = sc({ buds: [[0, -1, 0]], hormones: hormones})
+let iterate = sc({ buds: [[0, -1, 0]], hormones: hormones })
 
 const camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
@@ -135,12 +139,12 @@ regl.frame(() => {
     let iterObject = iterate({
       deadZone: 0.1,
       growthStep: State.growthStep,
-      splitChance: 0.4,
-      viewAngle: 30,
-      branchAngle: 30,
-      viewDistance: 0.5,
-      growthDirection: [0, 1, 0],
-      growthBias: 0.5
+      splitChance: State.splitChance,
+      viewAngle: State.viewAngle,
+      branchAngle: State.branchAngle,
+      viewDistance: State.viewDistance,
+      growthDirection: State.growthDirection,
+      growthBias: State.growthBias
     })
     let hormones = iterObject.hormones
     let buds = iterObject.buds
@@ -157,7 +161,7 @@ regl.frame(() => {
       if (bud.parent) bud.parent.hasChildren = true
     })
 
-    buds.forEach(function(bud) {
+    buds.forEach(function (bud) {
       var parent = bud.parent
       if (bud.hasChildren) return
       while (parent) {
@@ -205,8 +209,8 @@ regl.frame(() => {
 
     // let offsetsBuff = regl.buffer(budOffsets)
     // let scalesBuff = regl.buffer(budScales)
-    if (alive > 0 || alive != prevAlive) {
-      prevAlive = alive;
+    if (alive > 0 || alive !== prevAlive) {
+      prevAlive = alive
       offsetsBuff(budOffsets)
       scalesBuff(budScales)
     }
