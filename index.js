@@ -36,6 +36,10 @@ module.exports = function (opts) {
     growType = opts.growType || growthStep
     branchAngle = opts.branchAngle || branchAngle
     viewDistance = opts.viewDistance || viewDistance
+    growthDirection = opts.growthDirection || growthDirection
+    growthBias = opts.growthBias || growthBias
+
+    growthDirection = vec3.normalize(growthDirection)
 
     if (opts.buds) {
       opts.buds.forEach((budPos) => {
