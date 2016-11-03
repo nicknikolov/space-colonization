@@ -36,6 +36,10 @@ gui.addSeparator()
 gui.addButton('restart', () => {
   iterate = sc({ buds: [[0, -1, 0]], hormones: hormones })
 })
+let jsonData = []
+gui.addButton('save', () => {
+  console.log(JSON.stringify(jsonData.reverse()))
+})
 
 // generate hormones
 let hormonesNum = 200
@@ -151,6 +155,7 @@ regl.frame(() => {
 
     const budOffsets = []
     const budScales = []
+    jsonData.length = 0
 
     let minArea = 0.0005
     for (let i = 0; i < buds.length; i++) {
@@ -204,6 +209,9 @@ regl.frame(() => {
         let radius = Math.sqrt(bud.area) / 10
         budOffsets.push(bud.position)
         budScales.push([radius, radius, radius])
+
+        if (bud.parent) jsonData.push([bud.position, buds.indexOf(bud.parent)])
+        else jsonData.push([[bud.position], -1])
       }
     }
 
