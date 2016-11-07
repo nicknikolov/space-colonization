@@ -3,8 +3,7 @@ const regl = require('regl')({
   extensions: ['EXT_shader_texture_lod', 'angle_instanced_arrays']
 })
 const mat4 = require('pex-math/Mat4')
-const vec3 = require('pex-math/Vec3')
-const rnd = require('pex-random')
+// const vec3 = require('pex-math/Vec3')
 const sphere = require('primitive-sphere')()
 const GUI = require('./local_modules/pex-gui')
 const sc = require('./index')
