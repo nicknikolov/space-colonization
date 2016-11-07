@@ -55,29 +55,14 @@ gui.addParam('growth dir', State, 'growthDirection', { min: -1, max: 1 })
 gui.addParam('growth bias', State, 'growthBias', { min: 0, max: 1 })
 gui.addSeparator()
 gui.addButton('restart', () => {
-  iterate = sc({ buds: [[0, 0, 0]], hormones: hormones })
+  iterate = sc({ buds: [[0, 0, 0]], hormones: volumePoints })
 })
 let jsonData = []
 gui.addButton('save', () => {
   console.log(JSON.stringify(jsonData))
 })
 
-// generate hormones
-let hormonesNum = 200
-let hormones = []
-for (let i = 0; i < hormonesNum; i++) {
-  var pos = vec3.add(rnd.vec3(1), [0, 0, 0])
-  if (vec3.length(vec3.sub(pos, [0, 0, 0])) > 5) {
-    i--
-    continue
-  }
-  // hormones.push(pos)
-  // console.log('works: ' + pos)
-  hormones.push(volumePoints[i])
-  // console.log('doesnt work: ' + volumePoints[i])
-}
-
-let iterate = sc({ buds: [[0, 0, 0]], hormones: hormones })
+let iterate = sc({ buds: [[0, 0, 0]], hormones: volumePoints })
 
 const camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
