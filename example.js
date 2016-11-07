@@ -8,6 +8,27 @@ const rnd = require('pex-random')
 const sphere = require('primitive-sphere')()
 const GUI = require('./local_modules/pex-gui')
 const sc = require('./index')
+const numPoints = 200
+// test
+const revolve = require('geom-revolve')
+const path = [
+  [0.0, 1.0, 0.0],
+  [0.2, 1.0, 0.0],
+  [0.3, 0.8, 0.0],
+  [0.7, 0.7, 0.0],
+  [0.5, 0.5, 0.0],
+  [0.08, 0.2, 0.0],
+  [0.05, 0.0, 0.0],
+  [0.0, 0.0, 0.0],
+  [0.0, -0.2, 0.0],
+  [0.0, -0.4, 0.0],
+  [0.0, -0.6, 0.0],
+  [0.0, -0.8, 0.0],
+  [0.0, -1.0, 0.0]
+]
+
+const torus = revolve(path, 16)
+const volumePoints = require('random-volume-points')(torus.positions, torus.cells, numPoints)
 
 // algorithm params
 let State = {}
@@ -34,11 +55,11 @@ gui.addParam('growth dir', State, 'growthDirection', { min: -1, max: 1 })
 gui.addParam('growth bias', State, 'growthBias', { min: 0, max: 1 })
 gui.addSeparator()
 gui.addButton('restart', () => {
-  iterate = sc({ buds: [[0, -1, 0]], hormones: hormones })
+  iterate = sc({ buds: [[0, 0, 0]], hormones: hormones })
 })
 let jsonData = []
 gui.addButton('save', () => {
-  console.log(JSON.stringify(jsonData.reverse()))
+  console.log(JSON.stringify(jsonData))
 })
 
 // generate hormones
@@ -50,10 +71,13 @@ for (let i = 0; i < hormonesNum; i++) {
     i--
     continue
   }
-  hormones.push(pos)
+  // hormones.push(pos)
+  // console.log('works: ' + pos)
+  hormones.push(volumePoints[i])
+  // console.log('doesnt work: ' + volumePoints[i])
 }
 
-let iterate = sc({ buds: [[0, -1, 0]], hormones: hormones })
+let iterate = sc({ buds: [[0, 0, 0]], hormones: hormones })
 
 const camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
@@ -223,6 +247,7 @@ regl.frame(() => {
       scalesBuff(budScales)
     }
 
+    // console.log(budOffsets.length)
     drawSphere({
       color: [0.4, 0.4, 0.4],
       view: mat4.create(),
