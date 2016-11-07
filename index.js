@@ -96,7 +96,6 @@ module.exports = function (opts) {
       if (bud.state === 1) continue
 
       if (attractors[i].length === 0) {
-        if (bud.hormones) bud.hormones.length = 0
         bud.state++
         continue
       }
@@ -156,10 +155,7 @@ module.exports = function (opts) {
         position: nextPos,
         parent: bud
       })
-
-      bud.hormones = attractors[i].map(function (index) { return hormones[index] })
     }
-
     return {
       buds: buds,
       hormones: hormones
