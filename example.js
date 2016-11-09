@@ -106,6 +106,43 @@ const drawSphere = regl({
   }
 })
 
+const drawTriangle = regl({
+  frag: `
+  precision mediump float;
+  uniform vec4 color;
+  void main () {
+    gl_FragColor = color;
+  }`,
+  vert: `
+  precision mediump float;
+  uniform mat4 projection, view;
+  attribute vec3 position, offset;
+  void main () {
+    vec4 pos = vec4(position, 1);
+    pos.xyz *= vec3(0.05, 0.05, 0.05);
+    pos.xyz += offset;
+    gl_Position = projection * view * pos;
+  }`,
+  attributes: {
+    position: [
+      [-1, 1, 0],
+      [1, 1, 0],
+      [1, -1, 0],
+      [-1, -1, 0],
+    ],
+    offset: {
+      buffer: regl.prop('offset'),
+      divisor: 1
+    }
+  },
+  elements: [[0, 1, 2], [2, 3, 0]],
+  instances: regl.prop('instances'),
+  uniforms: {
+    color: [0, 1, 0, 1]
+  },
+  count: 6
+})
+
 const drawLine = regl({
   frag: `
   precision mediump float;
@@ -139,6 +176,11 @@ let scalesBuff = regl.buffer({
   usage: 'dynamic'
 })
 
+let leafOffsetsBuff = regl.buffer({
+  type: 'float',
+  usage: 'dynamic'
+})
+
 let prevAlive = 0
 
 regl.frame(() => {
@@ -163,6 +205,7 @@ regl.frame(() => {
 
     const budOffsets = []
     const budScales = []
+    const leafOffsets = []
     jsonData.length = 0
 
     let minArea = 0.0005
@@ -173,6 +216,11 @@ regl.frame(() => {
     buds.forEach((bud) => {
       if (bud.parent) bud.parent.hasChildren = true
     })
+
+    buds.forEach((bud) => {
+      if (!bud.hasChildren) leafOffsets.push(bud.position)
+    })
+
 
     buds.forEach(function (bud) {
       var parent = bud.parent
@@ -229,6 +277,14 @@ regl.frame(() => {
       prevAlive = alive
       offsetsBuff(budOffsets)
       scalesBuff(budScales)
+    } else {
+      leafOffsetsBuff(leafOffsets)
+      drawTriangle({
+        color: [0.4, 0.4, 0.4],
+        view: mat4.create(),
+        instances: leafOffsets.length,
+        offset: leafOffsetsBuff
+      })
     }
 
     // console.log(budOffsets.length)
