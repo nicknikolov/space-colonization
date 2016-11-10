@@ -6,8 +6,7 @@ const glsl = require('glslify')
 const mat4 = require('pex-math/Mat4')
 const vec3 = require('pex-math/Vec3')
 const quat = require('pex-math/Quat')
-// const vec3 = require('pex-math/Vec3')
-// const sphere = require('primitive-sphere')()
+const sphere = require('primitive-sphere')()
 const cube = require('primitive-cube')()
 const GUI = require('./local_modules/pex-gui')
 const sc = require('./index')
@@ -31,7 +30,8 @@ const path = [
 ]
 
 const torus = revolve(path, 16)
-const volumePoints = require('random-volume-points')(torus.positions, torus.cells, numPoints)
+const randomVolumePoints = require('random-volume-points')
+let volumePoints = randomVolumePoints(torus.positions, torus.cells, numPoints)
 
 // algorithm params
 let State = {}
@@ -43,6 +43,7 @@ State.branchAngle = 30
 State.viewDistance = 0.5
 State.growthDirection = [0, 1, 0]
 State.growthBias = 0.5
+State.drawHormones = true
 
 const gui = new GUI(regl, window.innerWidth, window.innerHeight)
 window.addEventListener('mousedown', (e) => {
@@ -56,8 +57,11 @@ gui.addParam('branch angle', State, 'branchAngle', { min: 0, max: 180 })
 gui.addParam('view distance', State, 'viewDistance', { min: 0, max: 1 })
 gui.addParam('growth dir', State, 'growthDirection', { min: -1, max: 1 })
 gui.addParam('growth bias', State, 'growthBias', { min: 0, max: 1 })
+gui.addParam('draw hormones', State, 'drawHormones')
+
 gui.addSeparator()
 gui.addButton('restart', () => {
+  volumePoints = randomVolumePoints(torus.positions, torus.cells, numPoints)
   iterate = sc({ buds: [[0, 0, 0]], hormones: volumePoints })
 })
 let jsonData = []
@@ -116,6 +120,37 @@ const drawCube = regl({
   uniforms: {
     color: regl.prop('color'),
     model: regl.prop('model')
+  }
+})
+
+const drawSphere = regl({
+  vert: `
+  precision mediump float;
+  attribute vec3 position, offset;
+  uniform mat4 projection, view;
+  void main() {
+    vec4 pos = vec4(position, 1);
+    pos.xyz *= vec3(0.02, 0.02, 0.02);
+    pos.xyz += offset;
+    gl_Position = projection * view * pos;
+  }`,
+  frag: `
+  precision mediump float;
+  uniform vec3 color;
+  void main() {
+    gl_FragColor = vec4(color, 1.0);
+  }`,
+  attributes: {
+    position: sphere.positions,
+    offset: {
+      buffer: regl.prop('offset'),
+      divisor: 1
+    },
+  },
+  elements: sphere.cells,
+  instances: regl.prop('instances'),
+  uniforms: {
+    color: [1, 0, 0],
   }
 })
 
@@ -228,6 +263,11 @@ let leafRotationsBuff = regl.buffer({
   usage: 'dynamic'
 })
 
+let hormoneOffsetBuff = regl.buffer({
+  type: 'float',
+  usage: 'dynamic'
+})
+
 let prevAlive = 0
 
 regl.frame(() => {
@@ -255,6 +295,7 @@ regl.frame(() => {
     const budRotations = []
     const leafOffsets = []
     const leafRotations = []
+    const hormoneOffsets = []
     jsonData.length = 0
 
     let minArea = 0.0005
@@ -274,7 +315,6 @@ regl.frame(() => {
       }
     })
 
-
     buds.forEach(function (bud) {
       var parent = bud.parent
       if (bud.hasChildren) return
@@ -291,6 +331,7 @@ regl.frame(() => {
         // let model = mat4.createFromTranslation(hormone.position)
         // mat4.scale(model, [0.05, 0.05, 0.05])
         // drawCube({ color: [0, 0, 1], view: mat4.create(), model: model })
+        hormoneOffsets.push(hormone.position)
       } else if (hormone.state === 1) {
         // dead hormone
       }
@@ -331,13 +372,12 @@ regl.frame(() => {
       }
     }
 
-    // let offsetsBuff = regl.buffer(budOffsets)
-    // let scalesBuff = regl.buffer(budScales)
     if (alive > 0 || alive !== prevAlive) {
       prevAlive = alive
       offsetsBuff(budOffsets)
       scalesBuff(budScales)
       rotationsBuff(budRotations)
+      hormoneOffsetBuff(hormoneOffsets)
     } else {
       leafOffsetsBuff(leafOffsets)
       leafRotationsBuff(leafRotations)
@@ -350,7 +390,6 @@ regl.frame(() => {
       // })
     }
 
-    // console.log(budOffsets.length)
     drawCube({
       color: [0.4, 0.4, 0.4],
       view: mat4.create(),
@@ -360,6 +399,14 @@ regl.frame(() => {
       scale: scalesBuff,
       rotation: rotationsBuff
     })
+
+    if (State.drawHormones) {
+      drawSphere({
+        view: mat4.create(),
+        instances: hormoneOffsets.length,
+        offset: hormoneOffsetBuff,
+      })
+    }
 
     gui.draw()
   })
