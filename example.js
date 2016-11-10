@@ -2,20 +2,24 @@ const regl = require('regl')({
   pixelRatio: 1,
   extensions: ['EXT_shader_texture_lod', 'angle_instanced_arrays']
 })
+const glsl = require('glslify')
 const mat4 = require('pex-math/Mat4')
+const vec3 = require('pex-math/Vec3')
+const quat = require('pex-math/Quat')
 // const vec3 = require('pex-math/Vec3')
-const sphere = require('primitive-sphere')()
+// const sphere = require('primitive-sphere')()
+const cube = require('primitive-cube')()
 const GUI = require('./local_modules/pex-gui')
 const sc = require('./index')
-const numPoints = 200
+const numPoints = 100
 // test
 const revolve = require('geom-revolve')
 const path = [
   [0.0, 1.0, 0.0],
   [0.2, 1.0, 0.0],
   [0.3, 0.8, 0.0],
-  [0.7, 0.7, 0.0],
-  [0.5, 0.5, 0.0],
+  [0.5, 0.7, 0.0],
+  [0.4, 0.5, 0.0],
   [0.08, 0.2, 0.0],
   [0.05, 0.0, 0.0],
   [0.0, 0.0, 0.0],
@@ -69,15 +73,20 @@ const camera = require('regl-camera')(regl, {
   distance: 4
 })
 
-const drawSphere = regl({
-  vert: `
+const drawCube = regl({
+  vert: glsl`
+  #pragma glslify: quatToMat4 = require(./quat-to-mat4.glsl)
   precision mediump float;
-  // attribute vec3 position;
   attribute vec3 position, offset, scale;
+  attribute vec4 rotation;
   uniform mat4 projection, view, model;
   void main() {
+    mat4 rotationMatrix = quatToMat4(rotation);
     vec4 pos = vec4(position, 1);
     pos.xyz *= scale;
+    pos.z *= 5.0;
+    // pos.xyz *= vec3(0.02, 0.02, 0.06);
+    pos = rotationMatrix * pos;
     pos.xyz += offset;
     gl_Position = projection * view * model * pos;
   }`,
@@ -88,7 +97,7 @@ const drawSphere = regl({
     gl_FragColor = vec4(color, 1.0);
   }`,
   attributes: {
-    position: sphere.positions,
+    position: cube.positions,
     offset: {
       buffer: regl.prop('offset'),
       divisor: 1
@@ -96,9 +105,13 @@ const drawSphere = regl({
     scale: {
       buffer: regl.prop('scale'),
       divisor: 1
+    },
+    rotation: {
+      buffer: regl.prop('rotation'),
+      divisor: 1
     }
   },
-  elements: sphere.cells,
+  elements: cube.cells,
   instances: regl.prop('instances'),
   uniforms: {
     color: regl.prop('color'),
@@ -107,31 +120,54 @@ const drawSphere = regl({
 })
 
 const drawTriangle = regl({
-  frag: `
-  precision mediump float;
-  uniform vec4 color;
-  void main () {
-    gl_FragColor = color;
-  }`,
-  vert: `
+  vert: glsl`
+  #pragma glslify: quatToMat4 = require(./quat-to-mat4.glsl)
   precision mediump float;
   uniform mat4 projection, view;
-  attribute vec3 position, offset;
+  attribute vec3 position, offset, normal;
+  attribute vec4 rotation;
+  varying vec3 vNormal;
   void main () {
+    mat4 rotationMatrix = quatToMat4(rotation);
+    vNormal = vec3(rotationMatrix * vec4(normal, 1));
     vec4 pos = vec4(position, 1);
-    pos.xyz *= vec3(0.05, 0.05, 0.05);
+    pos.z += 1.0;
+    pos.xyz *= vec3(0.05, 0.05, 0.10);
+    pos = rotationMatrix * pos;
     pos.xyz += offset;
     gl_Position = projection * view * pos;
   }`,
+  frag: `
+  precision mediump float;
+  uniform vec4 color;
+  varying vec3 vNormal;
+  void main () {
+    vec3 normal = normalize(vNormal);
+    vec3 lightDir = normalize(vec3(0.0, 1.0, 0.0));
+    float diffuse = max(0.0, dot(lightDir, normal));
+    gl_FragColor.rgb = color.rgb * diffuse;
+    //gl_FragColor.rgb = normal;
+    gl_FragColor.a = 1.0;
+  }`,
   attributes: {
     position: [
-      [-1, 1, 0],
-      [1, 1, 0],
-      [1, -1, 0],
-      [-1, -1, 0],
+      [-1, 0, 1],
+      [1, 0, 1],
+      [1, 0, -1],
+      [-1, 0, -1]
+    ],
+    normal: [
+      [0, 1, 0],
+      [0, 1, 0],
+      [0, 1, 0],
+      [0, 1, 0]
     ],
     offset: {
       buffer: regl.prop('offset'),
+      divisor: 1
+    },
+    rotation: {
+      buffer: regl.prop('rotation'),
       divisor: 1
     }
   },
@@ -171,12 +207,23 @@ let offsetsBuff = regl.buffer({
   type: 'float',
   usage: 'dynamic'
 })
+
 let scalesBuff = regl.buffer({
   type: 'float',
   usage: 'dynamic'
 })
 
+let rotationsBuff = regl.buffer({
+  type: 'float',
+  usage: 'dynamic'
+})
+
 let leafOffsetsBuff = regl.buffer({
+  type: 'float',
+  usage: 'dynamic'
+})
+
+let leafRotationsBuff = regl.buffer({
   type: 'float',
   usage: 'dynamic'
 })
@@ -205,7 +252,9 @@ regl.frame(() => {
 
     const budOffsets = []
     const budScales = []
+    const budRotations = []
     const leafOffsets = []
+    const leafRotations = []
     jsonData.length = 0
 
     let minArea = 0.0005
@@ -218,7 +267,11 @@ regl.frame(() => {
     })
 
     buds.forEach((bud) => {
-      if (!bud.hasChildren) leafOffsets.push(bud.position)
+      if (!bud.hasChildren && bud.parent) {
+        const rot = quat.fromDirection(quat.create(), vec3.sub(vec3.copy(bud.position), bud.parent.position))
+        leafRotations.push(rot)
+        leafOffsets.push(bud.position)
+      }
     })
 
 
@@ -237,7 +290,7 @@ regl.frame(() => {
         // alive hormone
         // let model = mat4.createFromTranslation(hormone.position)
         // mat4.scale(model, [0.05, 0.05, 0.05])
-        // drawSphere({ color: [0, 0, 1], view: mat4.create(), model: model })
+        // drawCube({ color: [0, 0, 1], view: mat4.create(), model: model })
       } else if (hormone.state === 1) {
         // dead hormone
       }
@@ -257,7 +310,7 @@ regl.frame(() => {
         // alive
         // let model = mat4.createFromTranslation(bud.position)
         // mat4.scale(model, [0.05, 0.05, 0.05])
-        // drawSphere({ color: [0, 1, 0], view: mat4.create(), model: model })
+        // drawCube({ color: [0, 1, 0], view: mat4.create(), model: model })
       }
 
       if (bud.state === 1) {
@@ -265,6 +318,13 @@ regl.frame(() => {
         let radius = Math.sqrt(bud.area) / 10
         budOffsets.push(bud.position)
         budScales.push([radius, radius, radius])
+        if (bud.parent) {
+          const rot = quat.fromDirection(quat.create(), vec3.normalize(vec3.sub(vec3.copy(bud.position), bud.parent.position)))
+          budRotations.push(rot)
+        } else {
+          const rot = quat.fromDirection(quat.create(), vec3.normalize(vec3.sub(vec3.copy(bud.position), buds[i + 1].position)))
+          budRotations.push(rot)
+        }
 
         if (bud.parent) jsonData.push([bud.position, buds.indexOf(bud.parent)])
         else jsonData.push([bud.position, -1])
@@ -277,24 +337,28 @@ regl.frame(() => {
       prevAlive = alive
       offsetsBuff(budOffsets)
       scalesBuff(budScales)
+      rotationsBuff(budRotations)
     } else {
       leafOffsetsBuff(leafOffsets)
-      drawTriangle({
-        color: [0.4, 0.4, 0.4],
-        view: mat4.create(),
-        instances: leafOffsets.length,
-        offset: leafOffsetsBuff
-      })
+      leafRotationsBuff(leafRotations)
+      // drawTriangle({
+      //   color: [0.4, 0.4, 0.4],
+      //   view: mat4.create(),
+      //   instances: leafOffsets.length,
+      //   offset: leafOffsetsBuff,
+      //   rotation: leafRotationsBuff
+      // })
     }
 
     // console.log(budOffsets.length)
-    drawSphere({
+    drawCube({
       color: [0.4, 0.4, 0.4],
       view: mat4.create(),
       model: mat4.create(),
       instances: budOffsets.length,
       offset: offsetsBuff,
-      scale: scalesBuff
+      scale: scalesBuff,
+      rotation: rotationsBuff
     })
 
     gui.draw()
