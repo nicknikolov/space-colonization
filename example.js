@@ -44,6 +44,7 @@ State.viewDistance = 0.5
 State.growthDirection = [0, 1, 0]
 State.growthBias = 0.5
 State.drawHormones = true
+State.drawLeaves = true
 
 const gui = new GUI(regl, window.innerWidth, window.innerHeight)
 window.addEventListener('mousedown', (e) => {
@@ -58,6 +59,7 @@ gui.addParam('view distance', State, 'viewDistance', { min: 0, max: 1 })
 gui.addParam('growth dir', State, 'growthDirection', { min: -1, max: 1 })
 gui.addParam('growth bias', State, 'growthBias', { min: 0, max: 1 })
 gui.addParam('draw hormones', State, 'drawHormones')
+gui.addParam('draw leaves', State, 'drawLeaves')
 
 gui.addSeparator()
 gui.addButton('restart', () => {
@@ -381,13 +383,15 @@ regl.frame(() => {
     } else {
       leafOffsetsBuff(leafOffsets)
       leafRotationsBuff(leafRotations)
-      // drawTriangle({
-      //   color: [0.4, 0.4, 0.4],
-      //   view: mat4.create(),
-      //   instances: leafOffsets.length,
-      //   offset: leafOffsetsBuff,
-      //   rotation: leafRotationsBuff
-      // })
+      if (State.drawLeaves) {
+        drawTriangle({
+          color: [0.4, 0.4, 0.4],
+          view: mat4.create(),
+          instances: leafOffsets.length,
+          offset: leafOffsetsBuff,
+          rotation: leafRotationsBuff
+        })
+      }
     }
 
     drawCube({
