@@ -130,8 +130,7 @@ module.exports = function (opts) {
         buds.push({
           state: 0,
           position: nextPos,
-          parent: bud,
-          split: true
+          parent: bud
         })
         didSplit = true
       }
