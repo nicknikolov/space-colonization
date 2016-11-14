@@ -2,7 +2,7 @@
 
 [![unstable](http://badges.github.io/stability-badges/dist/experimental.svg)](http://github.com/badges/stability-badges)
 
-![alt text](tree.jpg "Tree")
+![alt text](tree-small.jpg "Tree")
 
 Algorithm for tree-like and bush-like objects. Based on this [paper](http://algorithmicbotany.org/papers/colonization.egwnp2007.large.pdf).
 
