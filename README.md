@@ -20,6 +20,7 @@ Options:
 * `viewAngle`: the angle at which an alive bud (the tip of a growing branch) can see hormones. defaults to `30` (measured in degrees)
 * `viewDistance`: how far the alive bud can see hormones. defaults to `0.5`
 * `branchAngle`: when a split happens, how far the two new branches bend away from each other. defaults to `30` (measured in degrees)
+* `straightSplit`: if `true`, only new branch bends to the `branchAngle`. if `false`, both old and new branches bend (i. e. you get a V-like shape)
 
 These numbers (except the angles) assume the buds and hormones have a distance between them in the same range (e.g. from 0 to 5). If you provide positions that have a range of 10-50 for example nothing will grow because the `viewDistance` is too small for the initial bud to see anything!
 

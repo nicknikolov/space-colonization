@@ -17,7 +17,7 @@ module.exports = function (opts) {
   let growthStep = opts.growthStep || 0.02
   let splitChance = opts.splitChance || 0.4
   let viewAngle = opts.viewAngle || 50
-  let growType = opts.growType || 'split'
+  let straightSplit = opts.straightSplit || false
   let branchAngle = opts.branchAngle || 30
   let viewDistance = opts.viewDistance || 0.3
   let growthDirection = opts.growthDirection || [0, 1, 0]
@@ -33,11 +33,11 @@ module.exports = function (opts) {
     growthStep = opts.growthStep || growthStep
     splitChance = opts.splitChance || splitChance
     viewAngle = opts.viewAngle || viewAngle
-    growType = opts.growType || growthStep
     branchAngle = opts.branchAngle || branchAngle
     viewDistance = opts.viewDistance || viewDistance
     growthDirection = opts.growthDirection || growthDirection
     growthBias = opts.growthBias || growthBias
+    straightSplit = opts.straightSplit || straightSplit
 
     growthDirection = vec3.normalize(growthDirection)
 
@@ -142,8 +142,7 @@ module.exports = function (opts) {
       vec3.lerp(vec3.normalize(dir), vec3.normalize(growthDirection), growthBias)
 
       vec3.scale(vec3.normalize(dir), growthStep)
-      if (didSplit && growType === 'split') {
-        // if it split and grow type is 'split' we need to rotate
+      if (didSplit && !straightSplit) {
         let sinBranchAngle = Math.sin(branchAngle * (Math.PI / 180))
         let cosBranchAngle = Math.cos(branchAngle * (Math.PI / 180))
         dir[0] = dir[0] * cosBranchAngle + dir[1] * sinBranchAngle
