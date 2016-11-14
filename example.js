@@ -115,9 +115,9 @@ regl.frame(() => {
       var hormone = hormones[i]
       if (hormone.state === 0) {
         // alive hormone
-        let model = mat4.createFromTranslation(hormone.position)
-        mat4.scale(model, [0.05, 0.05, 0.05])
-        drawSphere({ color: [0, 0, 1], view: mat4.create(), model: model })
+        // let model = mat4.createFromTranslation(hormone.position)
+        // mat4.scale(model, [0.05, 0.05, 0.05])
+        // drawSphere({ color: [0, 0, 1], view: mat4.create(), model: model })
       } else if (hormone.state === 1) {
         // dead hormone
       }
