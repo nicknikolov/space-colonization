@@ -1,4 +1,4 @@
-const regl = require('regl')({ pixelRatio: 1})
+const regl = require('regl')({ pixelRatio: 1 })
 const mat4 = require('pex-math/Mat4')
 const vec3 = require('pex-math/Vec3')
 const rnd = require('pex-random')
@@ -56,29 +56,29 @@ const drawSphere = regl({
   }
 })
 
-const drawLine = regl({
-  frag: `
-  precision mediump float;
-  uniform vec4 color;
-  void main () {
-    gl_FragColor = color;
-  }`,
-  vert: `
-  precision mediump float;
-  uniform mat4 projection, view;
-  attribute vec3 position;
-  void main () {
-    gl_Position = projection * view * vec4(position, 1);
-  }`,
-  attributes: {
-    position: regl.prop('pos')
-  },
-  uniforms: {
-    color: [1, 0, 0, 1]
-  },
-  primitive: 'lines',
-  count: 2
-})
+// const drawLine = regl({
+//   frag: `
+//   precision mediump float;
+//   uniform vec4 color;
+//   void main () {
+//     gl_FragColor = color;
+//   }`,
+//   vert: `
+//   precision mediump float;
+//   uniform mat4 projection, view;
+//   attribute vec3 position;
+//   void main () {
+//     gl_Position = projection * view * vec4(position, 1);
+//   }`,
+//   attributes: {
+//     position: regl.prop('pos')
+//   },
+//   uniforms: {
+//     color: [1, 0, 0, 1]
+//   },
+//   primitive: 'lines',
+//   count: 2
+// })
 
 regl.frame(() => {
   regl.clear({
@@ -97,15 +97,17 @@ regl.frame(() => {
     }
 
     buds.forEach((bud) => {
-      if (bud.parent) bud.parent.hasChildren = true
+      if (bud.parentIndex !== -1) {
+        buds[bud.parentIndex].hasChildren = true
+      }
     })
 
-    buds.forEach(function(bud) {
-      var parent = bud.parent
+    buds.forEach(function (bud) {
+      let parent = buds[bud.parentIndex]
       if (bud.hasChildren) return
       while (parent) {
         parent.area = (parent.area || 0) + minArea
-        parent = parent.parent
+        parent = buds[parent.parentIndex]
       }
     })
 
@@ -123,10 +125,6 @@ regl.frame(() => {
 
     for (let i = 0; i < buds.length; i++) {
       var bud = buds[i]
-      if (bud.parent) {
-        // drawLine({ pos: [bud.parent.position, bud.position] })
-      }
-
       if (bud.state === 0) {
         // alive
         let model = mat4.createFromTranslation(bud.position)

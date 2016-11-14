@@ -23,7 +23,7 @@ module.exports = function (opts) {
   let growthDirection = opts.growthDirection || [0, 1, 0]
   let growthBias = opts.growthBias || 0
 
-  let buds = budPosArray.map((budPos) => { return { state: 0, position: budPos, parentPos: null } })
+  let buds = budPosArray.map((budPos) => { return { state: 0, position: budPos } })
   let hormones = hormPosArray.map((hormonePos) => { return { state: 0, position: hormonePos } })
 
   // iterate function
@@ -43,7 +43,7 @@ module.exports = function (opts) {
 
     // if (opts.buds) {
     //   opts.buds.forEach((budPos) => {
-    //     buds.push({ state: 0, position: budPos, parentPos: null })
+    //     buds.push({ state: 0, position: budPos})
     //   })
     // }
 
@@ -160,7 +160,13 @@ module.exports = function (opts) {
       })
     }
     return {
-      buds: buds,
+      buds: buds.map((bud) => {
+        return {
+          'state': bud.state,
+          'position': bud.position,
+          'parentIndex': buds.indexOf(bud.parent) || -1
+        }
+      }),
       hormones: hormones
     }
   }
