@@ -41,11 +41,11 @@ module.exports = function (opts) {
 
     growthDirection = vec3.normalize(growthDirection)
 
-    if (opts.buds) {
-      opts.buds.forEach((budPos) => {
-        buds.push({ state: 0, position: budPos, parentPos: null })
-      })
-    }
+    // if (opts.buds) {
+    //   opts.buds.forEach((budPos) => {
+    //     buds.push({ state: 0, position: budPos, parentPos: null })
+    //   })
+    // }
 
     if (opts.hormones) {
       opts.hormones.forEach((hormonePos) => {
