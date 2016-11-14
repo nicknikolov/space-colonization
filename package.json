@@ -3,10 +3,18 @@
   "version": "0.1.0",
   "description": "space colonization algorithm",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nicknikolov/space-colonization.git"
+  },
   "scripts": {
     "example": "budo example.js:bundle.js --live --open --onupdate \"standard --verbose | snazzy\" -- -t glslify -t brfs"
   },
   "author": "nicknikolov <nick@nklv.me>",
+  "bugs": {
+    "url": "https://github.com/nicknikolov/space-colonization/issues"
+  },
+  "homepage": "https://github.com/nicknikolov/space-colonization#readme",
   "license": "MIT",
   "dependencies": {
     "pex-math": "^1.0.1"
